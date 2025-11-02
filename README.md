@@ -1,4 +1,4 @@
-# guide_IS_research
+# Guide Information System Research
 This repository collects materials, notes, data pointers, and reproducible artifacts for Information Systems research.
 
 ## Overview
