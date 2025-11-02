@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to IS Research</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Calm Harmony" (Stone/Amber neutrals, Teal accent) -->
+    <!-- Application Structure Plan: This single-page application uses a tabbed/section-based navigation (`Overview`, `Paradigms`, `Approaches`, `Compare Methods`, `References`). This structure was chosen to deconstruct a complex, layered academic topic into an engaging, non-linear exploratory tool. It logically separates the "Why" (Paradigms) from the "How" (Approaches) and the "So What" (Compare). This is more user-friendly than a linear report, as users can jump directly to the section they need. Interactions (content toggling, filtering, dynamic chart updates) encourage active learning and synthesis, which a static document cannot provide. The user flow allows for both a guided path (following the tabs in order) and direct access to specific information. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: High-level split (Behavioral vs. Design Science). Goal: Orient user. Viz/Method: HTML/CSS/Tailwind diagram (flexbox containers with borders). Interaction: Static visual mental model. Justification: Clear, fast, avoids forbidden SVG/Mermaid.
+        2. Report Info: Three core paradigms (Positivist, Interpretive, Critical). Goal: Inform & Define. Viz/Method: Interactive "Accordion" (Clickable buttons, JS show/hide of detail divs). Interaction: Click a paradigm to reveal its description, hiding others. Justification: Breaks down complex philosophy into manageable, user-selectable chunks.
+        3. Report Info: Specific research methods (Survey, Case Study, DSR, etc.). Goal: Organize & Detail. Viz/Method: Filterable grid of expandable cards (HTML/Tailwind + JS). Interaction: 1) Filter buttons (`All`, `Quant`, `Qual`, `Design`) show/hide cards via JS (`data-category`). 2) Clicking a card's title expands/collapses its "details" div. Justification: Filtering and on-demand detail keeps the UI clean and user-focused.
+        4. Report Info: Comparative attributes of methods. Goal: Compare & Synthesize. Viz/Method: Radar Chart (Chart.js on `<canvas>`). Interaction: User checks/unchecks boxes for methods. A JS `change` listener rebuilds the `chart.data.datasets` array and calls `chart.update()`. Justification: Radar chart is ideal for comparing multiple items across multiple, non-scalar dimensions (e.g., "Contextual Depth"). Library/Method: Chart.js (Canvas).
+        5. Report Info: Academic References. Goal: Provide sources. Viz/Method: Simple HTML `<ul>` list. Interaction: None. Justification: Standard, clear presentation.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 500px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px;
+            }
+        }
+        .nav-btn {
+            @apply px-3 py-2 rounded-md text-sm font-medium text-stone-600 hover:bg-teal-50 hover:text-teal-700 transition-colors;
+        }
+        .nav-btn.active {
+            @apply bg-teal-100 text-teal-800 font-semibold;
+        }
+        .content-section {
+            @apply p-4 bg-white rounded-lg shadow-lg;
+        }
+        .filter-btn {
+            @apply px-4 py-2 rounded-full text-sm font-medium border transition-all;
+        }
+        .filter-btn.active {
+            @apply bg-teal-600 text-white border-teal-600;
+        }
+        .filter-btn:not(.active) {
+            @apply bg-white text-stone-700 border-stone-300 hover:bg-stone-50;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <h1 class="text-xl md:text-2xl font-bold text-teal-700">An Interactive Guide to IS Research</h1>
+                <div class="flex space-x-1 sm:space-x-2">
+                    <button class="nav-btn active" data-target="overview">Overview</button>
+                    <button class="nav-btn" data-target="paradigms">Paradigms</button>
+                    <button class="nav-btn" data-target="approaches">Approaches</button>
+                    <button class="nav-btn" data-target="compare">Compare</button>
+                    <button class="nav-btn" data-target="references">References</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+        <section id="overview" class="content-section">
+            <h2 class="text-2xl font-bold text-stone-900 mb-4">Understanding the Landscape</h2>
+            <p class="text-stone-700 mb-6">
+                Welcome! This guide translates the complex world of Information Systems (IS) research into an interactive explorer. In IS, we study the intricate relationship between people, organizations, and technology. To do this, researchers adopt different "stances" or goals. This application breaks down these stances, from the high-level philosophies (Paradigms) to the specific tools (Approaches), and lets you dynamically compare them.
+            </p>
+            <p class="text-stone-700 mb-6">
+                At the highest level, IS research can be broadly divided into two major categories based on its primary goal:
+            </p>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1 border-2 border-stone-300 rounded-lg p-6 text-center">
+                    <h3 class="text-xl font-semibold text-teal-700 mb-2">Behavioral Science</h3>
+                    <p class="text-stone-600"><strong>Goal:</strong> To seek <span class="font-bold">truth</span> and <span class="font-bold">understand</span> reality.</p>
+                    <p class="text-stone-600 mt-2">This approach focuses on developing and verifying theories that <span class="italic">explain</span> or <span class="italic">predict</span> human or organizational behavior related to technology. It asks: "Why do people use (or not use) this system?" or "How does this IT impact team performance?"</p>
+                </div>
+                <div class="flex-1 border-2 border-stone-300 rounded-lg p-6 text-center">
+                    <h3 class="text-xl font-semibold text-indigo-700 mb-2">Design Science</h3>
+                    <p class="text-stone-600"><strong>Goal:</strong> To seek <span class="font-bold">utility</span> and <span class="font-bold">create</span> artifacts.</p>
+                    <p class="text-stone-600 mt-2">This approach focuses on <span class="italic">building</span> and <span class="italic">evaluating</span> innovative IT artifacts (like models, methods, or software) to solve real-world problems. It asks: "How can we build a better system for this specific problem?"</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="paradigms" class="content-section hidden">
+            <h2 class="text-2xl font-bold text-stone-900 mb-4">Research Paradigms: The "Why"</h2>
+            <p class="text-stone-700 mb-6">
+                This section explores the philosophical foundations, or <span class="font-bold">paradigms</span>, that underpin <span class="italic">Behavioral Science</span> research. A paradigm is a set of core beliefs about the nature of reality (ontology) and how we can know it (epistemology). These beliefs fundamentally shape what questions a researcher asks and how they try to answer them. Click each paradigm to learn more.
+            </p>
+            <div class="flex flex-col md:flex-row md:space-x-4">
+                <div class="md:w-1/3">
+                    <div class="flex flex-col space-y-2">
+                        <button class="paradigm-btn w-full text-left p-4 rounded-lg font-medium text-lg transition-all bg-amber-100 text-amber-900" data-target="positivist">
+                            1. Positivist
+                        </button>
+                        <button class="paradigm-btn w-full text-left p-4 rounded-lg font-medium text-lg transition-all bg-stone-100 text-stone-600" data-target="interpretive">
+                            2. Interpretive
+                        </button>
+                        <button class="paradigm-btn w-full text-left p-4 rounded-lg font-medium text-lg transition-all bg-stone-100 text-stone-600" data-target="critical">
+                            3. Critical
+                        </button>
+                    </div>
+                </div>
+                <div class="md:w-2/3 mt-4 md:mt-0">
+                    <div id="positivist-content" class="paradigm-content p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <h3 class="text-xl font-bold text-amber-900 mb-2">Positivist Paradigm</h3>
+                        <ul class="list-disc list-inside space-y-2 text-stone-700">
+                            <li><strong>Ontology (Reality):</strong> Assumes a single, objective reality exists "out there." It is orderly and can be measured and known.</li>
+                            <li><strong>Epistemology (Knowledge):</strong> The researcher is a detached, objective observer. Knowledge is gained by measuring phenomena and testing hypotheses. The goal is to find universal laws and causal relationships.</li>
+                            <li><strong>Common Methods:</strong> Surveys, Experiments, Statistical Analysis.</li>
+                            <li><strong>Example IS Question:</strong> "Does the graphical design of an e-commerce website (Variable A) have a direct, measurable effect on user purchase intent (Variable B)?"</li>
+                        </ul>
+                    </div>
+                    <div id="interpretive-content" class="paradigm-content p-4 bg-stone-50 rounded-lg border border-stone-200 hidden">
+                        <h3 class="text-xl font-bold text-stone-800 mb-2">Interpretive Paradigm</h3>
+                        <ul class="list-disc list-inside space-y-2 text-stone-700">
+                            <li><strong>Ontology (Reality):</strong> Assumes reality is socially constructed. There is no single objective reality, only multiple, complex realities as perceived by different people.</li>
+                            <li><strong>Epistemology (Knowledge):</strong> The researcher is involved and subjective. Knowledge is gained by understanding the meanings people assign to their world. The goal is to understand context and lived experience.</li>
+                            <li><strong>Common Methods:</strong> Case Studies, Ethnography, Interviews.</li>
+                            <li><strong>Example IS Question:</strong> "How do frontline employees in a hospital *make sense of* and *experience* the implementation of a new patient record system in their daily work?"</li>
+                        </ul>
+                    </div>
+                    <div id="critical-content" class="paradigm-content p-4 bg-stone-50 rounded-lg border border-stone-200 hidden">
+                        <h3 class="text-xl font-bold text-stone-800 mb-2">Critical Paradigm</h3>
+                        <ul class="list-disc list-inside space-y-2 text-stone-700">
+                            <li><strong>Ontology (Reality):</strong> Assumes reality is shaped by historical, social, political, and economic power structures. These structures create inequality and oppression.</li>
+                            <li><strong>Epistemology (Knowledge):</strong> The researcher is an activist and change agent. Knowledge is gained by uncovering these hidden structures. The goal is not just to understand reality, but to critique it and promote social change.</li>
+                            <li><strong>Common Methods:</strong> Action Research, Critical Discourse Analysis.</li>
+                            <li><strong>Example IS Question:</strong> "How does the design of an algorithm for hiring 'gig economy' workers reinforce existing power imbalances and social inequalities?"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="approaches" class="content-section hidden">
+            <h2 class="text-2xl font-bold text-stone-900 mb-4">Research Approaches: The "How"</h2>
+            <p class="text-stone-700 mb-6">
+                This section details the specific <span class="font-bold">approaches</span>, or methods, researchers use to conduct their studies. These are the "tools" for gathering and analyzing data, and the choice of tool is guided by the paradigm and the research question. Use the filters to explore methods by their category. Click any card to see its strengths and weaknesses.
+            </p>
+            <div id="filter-container" class="flex flex-wrap gap-2 mb-6">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="quant">Behavioral (Quantitative)</button>
+                <button class="filter-btn" data-filter="qual">Behavioral (Qualitative)</button>
+                <button class="filter-btn" data-filter="design">Design Science</button>
+            </div>
+            <div id="method-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                <div class="method-card border border-stone-200 rounded-lg overflow-hidden" data-category="quant">
+                    <button class="method-toggle w-full text-left p-4 bg-amber-50">
+                        <h3 class="text-lg font-bold text-amber-900">Survey</h3>
+                        <p class="text-sm text-stone-600 mt-1">Collects data from a sample to generalize about a population, often via questionnaires.</p>
+                    </button>
+                    <div class="method-details hidden p-4 border-t border-stone-200 bg-white">
+                        <h4 class="font-semibold mb-1">Strengths:</h4>
+                        <ul class="list-disc list-inside text-sm mb-2">
+                            <li>High generalizability (if sampled well)</li>
+                            <li>Cost-effective for large samples</li>
+                            <li>Good for descriptive and correlational insights</li>
+                        </ul>
+                        <h4 class="font-semibold mb-1">Weaknesses:</h4>
+                        <ul class="list-disc list-inside text-sm">
+                            <li>Lacks contextual depth ("the why")</li>
+                            <li>Risk of respondent bias or low response rates</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="method-card border border-stone-200 rounded-lg overflow-hidden" data-category="quant">
+                    <button class="method-toggle w-full text-left p-4 bg-amber-50">
+                        <h3 class="text-lg font-bold text-amber-900">Experiment</h3>
+                        <p class="text-sm text-stone-600 mt-1">Manipulates one or more variables in a controlled setting to test causal hypotheses.</p>
+                    </button>
+                    <div class="method-details hidden p-4 border-t border-stone-200 bg-white">
+                        <h4 class="font-semibold mb-1">Strengths:</h4>
+                        <ul class="list-disc list-inside text-sm mb-2">
+                            <li>Strongest method for establishing causality</li>
+                            <li>High internal validity and control</li>
+                            <li>Replicable</li>
+                        </ul>
+                        <h4 class="font-semibold mb-1">Weaknesses:</h4>
+                        <ul class="list-disc list-inside text-sm">
+                            <li>Artificial setting may limit real-world relevance</li>
+                            <li>Can be difficult or unethical for some IS topics</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="method-card border border-stone-200 rounded-lg overflow-hidden" data-category="qual">
+                    <button class="method-toggle w-full text-left p-4 bg-sky-50">
+                        <h3 class="text-lg font-bold text-sky-900">Case Study</h3>
+                        <p class="text-sm text-stone-600 mt-1">An in-depth, "real-world" investigation of a single unit (e.g., a person, team, or organization).</p>
+                    </button>
+                    <div class="method-details hidden p-4 border-t border-stone-200 bg-white">
+                        <h4 class="font-semibold mb-1">Strengths:</h4>
+                        <ul class="list-disc list-inside text-sm mb-2">
+                            <li>Extremely high contextual depth and realism</li>
+                            <li>Good for studying complex social processes</li>
+                            <li>Can build rich, new theories (e.g., from Yin)</li>
+                        </ul>
+                        <h4 class="font-semibold mb-1">Weaknesses:</h4>
+                        <ul class="list-disc list-inside text-sm">
+                            <li>Findings are not statistically generalizable</li>
+                            <li>Time-consuming and data-intensive</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="method-card border border-stone-200 rounded-lg overflow-hidden" data-category="qual">
+                    <button class="method-toggle w-full text-left p-4 bg-sky-50">
+                        <h3 class="text-lg font-bold text-sky-900">Action Research</h3>
+                        <p class="text-sm text-stone-600 mt-1">The researcher actively intervenes in an organization to solve a problem *while* studying the process.</p>
+                    </button>
+                    <div class="method-details hidden p-4 border-t border-stone-200 bg-white">
+                        <h4 class="font-semibold mb-1">Strengths:</h4>
+                        <ul class="list-disc list-inside text-sm mb-2">
+                            <li>High practical relevance; solves real problems</li>
+                            <li>Empowers participants (aligned with Critical paradigm)</li>
+                            <li>Iterative cycles of action and reflection</li>
+                        </ul>
+                        <h4 class="font-semibold mb-1">Weaknesses:</h4>
+                        <ul class="list-disc list-inside text-sm">
+                            <li>Difficult to maintain research rigor and objectivity</li>
+                            <li>Dual roles of researcher and "consultant" can conflict</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="method-card border border-stone-200 rounded-lg overflow-hidden" data-category="qual">
+                    <button class="method-toggle w-full text-left p-4 bg-sky-50">
+                        <h3 class="text-lg font-bold text-sky-900">Ethnography</h3>
+                        <p class="text-sm text-stone-600 mt-1">Long-term, immersive observation of a social group in its natural setting to understand its culture.</p>
+                    </button>
+                    <div class="method-details hidden p-4 border-t border-stone-200 bg-white">
+                        <h4 class="font-semibold mb-1">Strengths:</h4>
+                        <ul class="list-disc list-inside text-sm mb-2">
+                            <li>Unmatched depth for understanding culture and "hidden" practices</li>
+                            <li>Captures what people *do*, not just what they *say*</li>
+                        </ul>
+                        <h4 class="font-semibold mb-1">Weaknesses:</h4>
+                        <ul class="list-disc list-inside text-sm">
+                            <li>Extremely time-consuming (months or years)</li>
+                            <li>Risk of "going native" (losing objectivity)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="method-card border border-stone-200 rounded-lg overflow-hidden" data-category="design">
+                    <button class="method-toggle w-full text-left p-4 bg-indigo-50">
+                        <h3 class="text-lg font-bold text-indigo-900">Design Science Research (DSR)</h3>
+                        <p class="text-sm text-stone-600 mt-1">Creates and evaluates innovative IT artifacts (models, methods, software) to solve problems.</p>
+                    </button>
+                    <div class="method-details hidden p-4 border-t border-stone-200 bg-white">
+                        <h4 class="font-semibold mb-1">Strengths:</h4>
+                        <ul class="list-disc list-inside text-sm mb-2">
+                            <li>Creates novel, useful solutions (artifacts)</li>
+                            <li>Directly addresses "how to" questions</li>
+                            <li>High practical relevance and contribution</li>
+                        </ul>
+                        <h4 class="font-semibold mb-1">Weaknesses:</h4>
+                        <ul class="list-disc list-inside text-sm">
+                            <li>Can be difficult to demonstrate theoretical rigor</li>
+                            <li>Evaluation of the artifact can be challenging</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="compare" class="content-section hidden">
+            <h2 class="text-2xl font-bold text-stone-900 mb-4">Compare Methods</h2>
+            <p class="text-stone-700 mb-6">
+                How do these methods stack up? Select two or three approaches to dynamically compare them on key attributes. This chart helps visualize the trade-offs a researcher makes. For example, methods high in <span class="font-bold">Generalizability</span> (like surveys) are often low in <span class="font-bold">Contextual Depth</span> (like case studies), and vice-versa.
+            </p>
+            <div id="radar-controls" class="flex flex-wrap justify-center gap-4 mb-6 p-4 bg-stone-100 rounded-lg">
+                <label class="flex items-center space-x-2 text-stone-700 font-medium">
+                    <input type="checkbox" class="radar-checkbox" value="survey" checked>
+                    <span>Survey</span>
+                </label>
+                <label class="flex items-center space-x-2 text-stone-700 font-medium">
+                    <input type="checkbox" class="radar-checkbox" value="caseStudy" checked>
+                    <span>Case Study</span>
+                </label>
+                <label class="flex items-center space-x-2 text-stone-700 font-medium">
+                    <input type="checkbox" class="radar-checkbox" value="experiment">
+                    <span>Experiment</span>
+                </label>
+                <label class="flex items-center space-x-2 text-stone-700 font-medium">
+                    <input type="checkbox" class="radar-checkbox" value="dsr" checked>
+                    <span>Design Science (DSR)</span>
+                </label>
+            </div>
+            <div class="chart-container">
+                <canvas id="radarChart"></canvas>
+            </div>
+        </section>
+        
+        <section id="references" class="content-section hidden">
+            <h2 class="text-2xl font-bold text-stone-900 mb-4">Key References</h2>
+            <p class="text-stone-700 mb-6">
+                This guide is based on foundational academic work in Information Systems research. For a much deeper dive, these papers are the standard-bearers for their respective topics and are highly recommended reading for any aspiring IS researcher.
+            </p>
+            <ul class="list-disc list-outside ml-5 space-y-3 text-stone-700">
+                <li>
+                    <strong>Hevner, A. R., March, S. T., Park, J., & Ram, S. (2004).</strong> Design science in information systems research. <em>MIS quarterly, 28</em>(1), 75-105. (The foundational paper for modern Design Science).
+                </li>
+                <li>
+                    <strong>Orlikowski, W. J., & Baroudi, J. J. (1991).</strong> Studying information technology in organizations: Research approaches and assumptions. <em>Information systems research, 2</em>(1), 1-28. (A classic paper outlining the three paradigms).
+                </li>
+                <li>
+                    <strong>Klein, H. K., & Myers, M. D. (1999).</strong> A set of principles for conducting and evaluating interpretive field studies in information systems. <em>MIS quarterly, 23</em>(1), 67-93. (A key guide for doing Interpretive research).
+                </li>
+                <li>
+                    <strong>Yin, R. K. (2003).</strong> <em>Case study research: Design and methods.</em> Sage publications. (The "bible" for conducting rigorous case study research).
+                </li>
+                <li>
+                    <strong>Walsham, G. (1993).</strong> <em>Interpreting information systems in organizations.</em> John Wiley & Sons. (A seminal book on the interpretive approach in IS).
+                </li>
+            </ul>
+        </section>
+
+    </main>
+
+    <footer class="text-center p-6 text-stone-500 text-sm">
+        A single-page application created to make IS research concepts accessible.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const navButtons = document.querySelectorAll('.nav-btn');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    contentSections.forEach(section => {
+                        if (section.id === targetId) {
+                            section.classList.remove('hidden');
+                        } else {
+                            section.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const paradigmBtns = document.querySelectorAll('.paradigm-btn');
+            const paradigmContents = document.querySelectorAll('.paradigm-content');
+
+            paradigmBtns.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target') + '-content';
+
+                    paradigmBtns.forEach(btn => {
+                        btn.classList.add('bg-stone-100', 'text-stone-600');
+                        btn.classList.remove('bg-amber-100', 'text-amber-900');
+                    });
+                    
+                    button.classList.remove('bg-stone-100', 'text-stone-600');
+                    button.classList.add('bg-amber-100', 'text-amber-900');
+
+                    paradigmContents.forEach(content => {
+                        if (content.id === targetId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const methodCards = document.querySelectorAll('.method-card');
+
+            filterBtns.forEach(button => {
+                button.addEventListener('click', () => {
+                    const filter = button.getAttribute('data-filter');
+
+                    filterBtns.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    methodCards.forEach(card => {
+                        const category = card.getAttribute('data-category');
+                        if (filter === 'all' || filter === category) {
+                            card.classList.remove('hidden');
+                        } else {
+                            card.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            const methodToggles = document.querySelectorAll('.method-toggle');
+            methodToggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const details = toggle.nextElementSibling;
+                    details.classList.toggle('hidden');
+                });
+            });
+
+            const radarData = {
+                labels: [
+                    'Generalizability', 
+                    'Contextual Depth', 
+                    'Researcher Control', 
+                    'Setting Naturalness', 
+                    'Artifact Generation'
+                ],
+                methods: {
+                    survey: {
+                        label: 'Survey',
+                        data: [8, 2, 4, 5, 1],
+                        backgroundColor: 'rgba(234, 179, 8, 0.2)',
+                        borderColor: 'rgba(234, 179, 8, 1)',
+                        pointBackgroundColor: 'rgba(234, 179, 8, 1)',
+                    },
+                    caseStudy: {
+                        label: 'Case Study',
+                        data: [2, 9, 2, 9, 2],
+                        backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                        borderColor: 'rgba(14, 165, 233, 1)',
+                        pointBackgroundColor: 'rgba(14, 165, 233, 1)',
+                    },
+                    experiment: {
+                        label: 'Experiment',
+                        data: [7, 3, 9, 2, 1],
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                    },
+                    dsr: {
+                        label: 'Design Science (DSR)',
+                        data: [4, 6, 7, 6, 10],
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    }
+                }
+            };
+            
+            let radarChart;
+            const radarCheckboxes = document.querySelectorAll('.radar-checkbox');
+            
+            function updateRadarChart() {
+                const activeDatasets = [];
+                radarCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        const methodData = radarData.methods[checkbox.value];
+                        activeDatasets.push({
+                            label: methodData.label,
+                            data: methodData.data,
+                            backgroundColor: methodData.backgroundColor,
+                            borderColor: methodData.borderColor,
+                            pointBackgroundColor: methodData.pointBackgroundColor,
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: methodData.borderColor,
+                            borderWidth: 2
+                        });
+                    }
+                });
+
+                radarChart.data.datasets = activeDatasets;
+                radarChart.update();
+            }
+
+            function initRadarChart() {
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                radarChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: radarData.labels,
+                        datasets: []
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true,
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 10,
+                                pointLabels: {
+                                    font: {
+                                        size: 13
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                },
+                                ticks: {
+                                    backdropColor: 'rgba(255, 255, 255, 0)',
+                                    stepSize: 2
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.r !== null) {
+                                            label += context.parsed.r;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                updateRadarChart();
+            }
+
+            radarCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateRadarChart);
+            });
+            
+            initRadarChart();
+        });
+    </script>
+</body>
+</html>
